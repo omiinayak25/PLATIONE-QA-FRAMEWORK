@@ -41,6 +41,10 @@ class Environment {
   }
 
   public isHeadless(): boolean {
+    if (process.env.CI) {
+      return true;
+    }
+
     return process.env.HEADLESS === "true";
   }
 
