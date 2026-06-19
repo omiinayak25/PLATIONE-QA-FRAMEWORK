@@ -1,3 +1,12 @@
+# # Node Modules
+# node_modules/
+
+# # Environment Files
+# .env
+# .env.local
+# .env.development
+# .env.staging
+# .env.production
 
 # Playwright
 node_modules/
@@ -6,3 +15,23 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Reports
+/reports/
+
+# # Downloads
+# /downloads/
+
+# # Screenshots
+# /screenshots/
+
+# # Logs
+# *.log
+
+# # OS Files
+# .DS_Store
+# Thumbs.db
+
+# # IDE
+# .vscode/
+# .idea/

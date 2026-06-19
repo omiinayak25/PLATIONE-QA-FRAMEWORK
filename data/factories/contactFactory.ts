@@ -1,0 +1,7 @@
+createContact();
+
+createHotLead();
+
+createColdLead();
+
+createDuplicateContact();
