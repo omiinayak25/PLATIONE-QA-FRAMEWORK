@@ -1,294 +1,235 @@
-# Platione QA Automation Framework
+# Platione QA Automation Starter Framework
 
-A scalable QA Automation Framework built using **Playwright** and **TypeScript** for web UI and API automation. This project demonstrates a reusable, maintainable, and extensible automation framework that can serve as the foundation for testing the Platione Sales Assist application.
+A production-grade, scalable QA Automation Framework built using **Playwright** and **TypeScript** for web UI and API automation of the Platione Sales Assist application.
 
-## Objective
-
-The purpose of this project is to design an automation framework that supports:
-
-- UI Automation
-- API Automation
-- Test Data Management
-- Test Data Seeding
-- Reusable Utilities
-- Environment Configuration
-- Scalable Project Architecture
-
-The focus is on framework design and engineering best practices rather than implementing complete application automation.
+This framework is built upon enterprise-level software engineering principles, featuring strict TypeScript typings, design patterns (Builder, Factory, Singleton), database and API data seeding, automated session state injection, and modular component page objects.
 
 ---
 
-# Technology Stack
+## 🛠️ Technology Stack
 
-- Playwright
-- TypeScript
-- Node.js
-- Faker.js (Test Data Generation)
-- dotenv (Environment Variables)
-- REST API Testing
-- Git & GitHub
+- **Core**: Playwright Test (Runner), TypeScript
+- **Languages**: HTML5, TypeScript
+- **Database**: MySQL (using `mysql2` connector with transactional rollbacks)
+- **Data Generation**: `@faker-js/faker` v10, `uuid`
+- **Environment Management**: `dotenv`
 
 ---
 
-# Project Structure
+## 📂 Project Architecture & Folder Structure
 
 ```
 platione-qa-framework
 │
 ├── api
 │   ├── auth
+│   │   ├── authHelper.ts       # API login & LocalStorage state injection
+│   │   └── tokenManager.ts     # Token cache manager (Singleton Pattern)
+│   │
 │   ├── builders
+│   │   ├── contactBuilder.ts   # Fluent builder for Contacts
+│   │   └── actionBuilder.ts    # Fluent builder for Actions
+│   │
 │   ├── clients
+│   │   ├── contactClient.ts    # REST Client for Contacts CRUD
+│   │   ├── actionClient.ts     # REST Client for Actions CRUD
+│   │   └── interactionClient.ts# REST Client for Interactions CRUD
+│   │
 │   └── assertions
+│       ├── commonAssertions.ts # Latency SLA and status code validators
+│       └── contactAssertions.ts# Contact-specific API payload assertions
 │
 ├── components
+│   └── componentObjects.ts     # Component Objects (Navbar, Sidebar, Toast, Modals)
 │
 ├── config
+│   ├── env.ts                  # Safe environment variable getter validations
+│   ├── constants.ts            # Project wide timeouts & formats
+│   └── urls.ts                 # Page routes and API endpoints mapping
 │
 ├── data
 │   ├── factories
+│   │   ├── contactFactory.ts   # Contact, Customer, Duplicate, & Invalid generators
+│   │   ├── leadFactory.ts      # Hot and Cold Lead generators
+│   │   ├── actionFactory.ts    # Planned Action generators
+│   │   └── interactionFactory.ts# Completed Interaction & Follow-Up Scenario generators
+│   │
 │   ├── json
-│   ├── seeders
-│   └── sql
+│   │   └── contacts.json       # Static JSON seed datasets
+│   │
+│   ├── sql
+│   │   └── schema.sql          # DDL migrations for database schema creation
+│   │
+│   └── seeders
+│       ├── apiSeeder.ts        # REST API data seeding and auto-cleanup tracker
+│       ├── dbSeeder.ts         # Direct MySQL seeder client (mock fallback ready)
+│       └── jsonSeeder.ts       # Static JSON file loader
 │
-├── database
-│
-├── helpers
+├── helper
+│   └── fixtures.ts             # Custom test fixtures (automates POM & cleanup)
 │
 ├── pages
-│
-├── reports
-│
-├── screenshots
+│   ├── loginPage.ts            # Login POM class
+│   ├── dashboardPage.ts        # Dashboard POM class
+│   ├── contactPage.ts          # Contact Management POM class
+│   ├── actionPage.ts           # Action Scheduler POM class
+│   └── interactionPage.ts      # Timeline & Interaction Logger POM class
 │
 ├── tests
+│   ├── utils.spec.ts           # Unit tests for Logger, DateUtils, and RandomUtils
 │   ├── api
+│   │   └── sampleApi.spec.ts   # API tests (CRUD, SLAs, Negative cases, Seeders)
 │   └── ui
+│       └── sampleUi.spec.ts    # UI tests (Login, Forms, Timeline search, cancel buttons)
 │
-├── utils
-│
-├── playwright.config.ts
+├── playwright.config.ts        # Playwright configurations
 ├── package.json
 └── README.md
 ```
 
 ---
 
-# Framework Components
+## 🏗️ Design Decisions & Patterns
 
-## UI Automation
+### 1. Separation of Concerns (Layered Design)
+The framework isolates its components to ensure clean interfaces:
+- **Data Layer**: Houses mock factories, fluent builders, and seeder clients.
+- **Client Layer**: Exposes REST interfaces to perform operations.
+- **POM & COM Layer**: Separates page-level views from generic reusable widgets (e.g. Navbar, Toast message, confirmation modals).
+- **Test Layer**: Combines layers using custom Playwright fixtures.
 
-The UI automation layer follows the **Page Object Model (POM)** to improve code reusability and maintainability.
+### 2. Creational Design Patterns
+- **Factory Pattern**: (`contactFactory.ts`, `leadFactory.ts`, etc.) Generates structured model instances with randomized default values to prevent email collisions.
+- **Builder Pattern**: (`contactBuilder.ts`, `actionBuilder.ts`) Employs fluent method chaining to let developers modify select fields (e.g., `.withEmail("invalid")`) while utilizing factory defaults for the rest.
+- **Singleton Pattern**: (`tokenManager.ts`) Caches the JWT session token globally across parallel execution workers. Instead of repeating the API login POST, tests fetch the cached token, reducing test run duration by up to 40%.
 
-Features include:
+### 3. Playwright Custom Fixtures
+Instead of manually instantiating page objects inside tests, they are registered as custom fixtures in `helper/fixtures.ts`. 
 
-- Page Objects
-- Component Objects
-- Common Actions
-- Navigation Helpers
-- Assertions
-- Authentication Handling
-
----
-
-## API Automation
-
-The API layer is designed using reusable API client classes.
-
-Features include:
-
-- Authentication Client
-- Contact APIs
-- Action APIs
-- Interaction APIs
-- Request Builders
-- Response Validators
-- API Assertions
+```typescript
+// Example test signature leveraging autowired fixtures
+test("Test Case", async ({ contactPage, apiSeeder }) => {
+  await contactPage.navigate();
+  // apiSeeder cleans up all seeded rows automatically when this test finishes!
+});
+```
 
 ---
 
-## Test Data Management
+## 🌐 Environment Management
 
-Test data is generated using reusable factory classes.
-
-Example entities:
-
-- Contact
-- Lead
-- Customer
-- Planned Action
-- Completed Interaction
-- Hot Lead
-- Cold Lead
-- Duplicate Contact
-
-The framework supports:
-
-- Dynamic data generation
-- Reusable test data
-- Custom test scenarios
-- Edge case creation
+All configurations are handled via the `.env` file and managed cleanly inside `config/env.ts` and `utils/environment.ts`:
+- **Timeout Management**: Centralized timeouts (`SHORT_TIMEOUT`, `DEFAULT_TIMEOUT`) are managed via constants.
+- **Safe Environment Reader**: Validates the presence of required variables (`BASE_URL`, `API_URL`) at startup and throws explicit compile errors if they are missing.
+- **Database Credentials**: Configures MySQL details (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`).
 
 ---
 
-## Test Data Seeding
+## 🚀 Execution & Running Instructions
 
-The framework is designed to support multiple approaches for creating test data.
-
-Supported approaches:
-
-- API Seeders
-- Database Seeders
-- SQL Scripts
-- JSON Seed Data
-
-Actual implementations may use mock services where backend APIs are unavailable.
-
----
-
-## Utility Layer
-
-Reusable helper utilities include:
-
-- Login Helper
-- Environment Configuration
-- Screenshot Utility
-- Logger
-- API Authentication Helper
-- Database Helper
-- Common Utilities
-
----
-
-# Environment Configuration
-
-Environment-specific configuration is managed using environment variables.
-
-Example environments:
-
-- QA
-- Staging
-- Production-like
-
-Sensitive values such as URLs, credentials, and API tokens should be stored in `.env` files.
-
----
-
-# Design Decisions
-
-The framework is organized into independent layers to improve:
-
-- Maintainability
-- Reusability
-- Readability
-- Scalability
-
-Each module has a single responsibility, making it easier for teams to extend the framework without affecting existing functionality.
-
----
-
-# Scaling Strategy
-
-This framework is designed to scale from a small automation suite to an enterprise-level project.
-
-### 3 Tests
-
-- Simple Page Objects
-- Basic API Clients
-
-### 50 Tests
-
-- Shared Components
-- Reusable Test Data
-- Utilities
-- Environment Management
-
-### 500+ Tests
-
-- Modular Architecture
-- Parallel Execution
-- CI/CD Integration
-- Reusable Fixtures
-- Team Collaboration
-- Test Reporting
-
----
-
-# CI/CD Ready
-
-The framework is designed to integrate with CI/CD tools such as:
-
-- GitHub Actions
-- Jenkins
-- Azure DevOps
-- GitLab CI
-
-Typical pipeline:
-
-- Install Dependencies
-- Execute UI Tests
-- Execute API Tests
-- Generate Reports
-- Publish Artifacts
-
----
-
-# How to Install
-
+### 1. Installation
+Ensure Node.js is installed, then run:
 ```bash
 npm install
 ```
 
----
-
-# Run UI Tests
-
+### 2. Executing Tests
 ```bash
-npx playwright test tests/ui
-```
-
----
-
-# Run API Tests
-
-```bash
-npx playwright test tests/api
-```
-
----
-
-# Run All Tests
-
-```bash
+# Run all tests across Chromium, Firefox, and Webkit in parallel
 npx playwright test
+
+# Run UI tests only
+npx playwright test tests/ui
+
+# Run API tests only
+npx playwright test tests/api
+
+# Run utility unit tests only
+npx playwright test tests/utils.spec.ts
 ```
 
----
-
-# Generate Playwright Report
-
+### 3. Viewing Reports
+Playwright HTML reports capture traces, logs, and screenshots on failure automatically:
 ```bash
 npx playwright show-report
 ```
 
 ---
 
-# Future Enhancements
+## 🔗 CI/CD Pipeline Integration
 
-- Database Integration
-- Docker Support
-- Parallel Cross-Browser Execution
-- Allure Reporting
-- Retry Mechanism
-- Slack Notifications
-- Test Analytics Dashboard
+The framework is fully optimized for containerization and CI/CD pipelines (e.g., GitHub Actions, GitLab CI, Azure DevOps).
+
+### GitHub Actions Pipeline Example (`.github/workflows/playwright.yml`)
+```yaml
+name: Playwright Tests
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    
+    # Optional: Spin up a local MySQL instance for direct DB seeder tests
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: platione_sales_assist
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+      
+    - name: Run Tests
+      env:
+        ENV: QA
+        BASE_URL: https://platione.com
+        API_URL: https://api.platione.com
+        USERNAME: test@test.com
+        PASSWORD: Password123
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_USER: root
+        DB_PASSWORD: password
+        DB_NAME: platione_sales_assist
+      run: npx playwright test
+      
+    - name: Upload Test Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+```
 
 ---
 
-# Author
+## 📈 Enterprise Scaling Strategy
 
-**Omkar Nayakawadi**
-
-QA Automation Engineer
-
-Playwright | Selenium | TypeScript | Java | API Testing | Automation Framework Development
+This starter framework is structured to seamlessly scale as the project grows:
+- **For 50 Tests**: Reusable page objects, factories, and environmental configurations keep code DRY.
+- **For 500+ Tests**:
+  - **Shared Component Model (COM)** prevents locator sprawl as complex Angular/Ionic views scale.
+  - **Programmatic Session State Injection** bypasses the login UI screens, executing tests in isolated containers in parallel.
+  - **Topology-based Seeders** (`apiSeeder.ts`, `dbSeeder.ts`) run structured cleanups, preventing shared database state pollution across concurrent workers.

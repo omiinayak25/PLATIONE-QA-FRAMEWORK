@@ -1,0 +1,18 @@
+[
+  {
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe.static@platione.com",
+    "phone": "+1555010017",
+    "company": "Static Corp",
+    "status": "Active"
+  },
+  {
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "email": "jane.smith.static@platione.com",
+    "phone": "+1555010018",
+    "company": "Acme Seeders Ltd",
+    "status": "Customer"
+  }
+]
